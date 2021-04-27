@@ -1,0 +1,1007 @@
+#include"game.h"
+void Game::GameStart()
+{
+    playFlag=true;
+    std::vector<int>tmp;
+    GameMap.clear();
+    for(int i=0;i<=grid_number;i++)
+    {
+        tmp.clear();
+        for(int j=0;j<=grid_number;j++)
+        {
+            tmp.push_back(EmptyGrid);
+        }
+        GameMap.push_back(tmp);
+    }
+    if(my_type==AI)
+    {
+        ScoreMapP.clear();
+        ScoreMapAI.clear();
+        for(int i=0;i<=grid_number;i++)
+        {
+            tmp.clear();
+            for(int j=0;j<=grid_number;j++)
+            {
+                tmp.push_back(0);
+            }
+            ScoreMapAI.push_back(tmp);
+            ScoreMapP.push_back(tmp);
+        }
+    }
+}
+bool Game::isWin(int col,int row)
+{
+    int color=GameMap[col][row];
+    int count_left=0;
+    int count_right=0;
+    int left=col;
+    int right=col;
+    int count_up=0;
+    int count_down=0;
+    int up=row;
+    int down=row;
+    int count_northwest=0;
+    int count_southeast=0;
+    int count_northeast=0;
+    int count_southwest=0;
+    //一行有五颗棋子
+    for(count_left=0,left=col;left>0;left--)
+    {
+        if(GameMap[left][row]==color&&color!=EmptyGrid)
+        {
+            count_left++;
+        }
+        else
+         {
+            break;
+        }
+    }
+    for(count_right=0,right=col+1;right<15;right++)
+    {
+        if(GameMap[right][row]==color&&color!=EmptyGrid)
+        {
+            count_right++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    if(count_left+count_right>=5)
+    {
+        return true;
+    }
+    //一列有五颗棋子
+    for(count_up=0,up=row;up>0;up--)
+    {
+        if(GameMap[col][up]==color&&color!=EmptyGrid)
+        {
+            count_up++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    for(count_down=0,down=row+1;down<15;down++)
+    {
+        if(GameMap[col][down]==color&&color!=EmptyGrid)
+        {
+            count_down++;
+        }
+        else
+         {
+            break;
+        }
+    }
+    if(count_up+count_down>=5)
+    {
+        return true;
+    }
+    //西北向有五颗棋子
+    for(count_northwest=0,left=col,up=row;left>0&&up>0;left--,up--)
+    {
+        if(GameMap[left][up]==color&&color!=EmptyGrid)
+        {
+            count_northwest++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    for(count_southeast=0,right=col+1,down=row+1;right<15&&down<15;right++,down++)
+    {
+        if(GameMap[right][down]==color&&color!=EmptyGrid)
+        {
+            count_southeast++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    if(count_northwest+count_southeast>=5)
+    {
+        return true;
+    }
+    //东北向有五颗棋子
+    for(count_northeast=0,right=col,up=row;right<15&&up>0;right++,up--)
+    {
+        if(GameMap[right][up]==color&&color!=EmptyGrid)
+        {
+            count_northeast++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    for(count_southwest=0,left=col-1,down=row+1;left>0&&down<15;left--,down++)
+    {
+        if(GameMap[left][down]==color&&color!=EmptyGrid)
+        {
+            count_southwest++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    if(count_northeast+count_southwest>=5)
+    {
+        return true;
+    }
+    return false;
+}
+void Game::AiAlgorithm(int &col, int &row)
+{
+     std::vector<int>tmp;
+    ScoreMapP.clear();
+    ScoreMapAI.clear();
+    for(int i=0;i<=grid_number;i++)
+    {
+        tmp.clear();
+        for(int j=0;j<=grid_number;j++)
+        {
+            tmp.push_back(EmptyGrid);
+        }
+        ScoreMapAI.push_back(tmp);
+        ScoreMapP.push_back(tmp);
+    }
+    //遍历棋盘给每个位置打分
+    int left=0;
+    int right=0;
+    int up=0;
+    int down=0;
+    int count=0;
+    int color=0;
+    int flag_AIcol=0;
+    int flag_AIrow=0;
+    int flag_pcol=0;
+    int flag_prow=0;
+    int maxAIWeight=0;
+    int maxPWeight=0;
+    for(int i=1;i<15;i++)
+    {
+        for(int j=1;j<15;j++)
+        {
+            if(GameMap[i][j]==EmptyGrid)
+            {
+                //向左计数
+               for(color=GameMap[i-1][j],left=i-1,count=0;left>0&&color!=EmptyGrid;left--)
+               {
+                   if(GameMap[left][j]==color)
+                   {
+                       count++;
+                   }
+                   else
+                   {
+                       break;
+                   }
+               }
+               if(count==4)
+               {
+                   if(color==whiteFlag)
+                   {
+                       ScoreMapP[i][j]+=2000;
+                   }
+                   if(color==blackFlag)
+                   {
+                       ScoreMapAI[i][j]+=2000;
+                   }
+                   //连4且两边为空
+                   if(i-5>0&&GameMap[i-5][j]==EmptyGrid)
+                   {
+                       if(color==whiteFlag)
+                       {
+                           ScoreMapP[i][j]+=6000;
+                       }
+                       if(color==blackFlag)
+                       {
+                           ScoreMapAI[i][j]+=6000;
+                       }
+                   }
+               }
+               else if(count==3&&i-5>0&&GameMap[i-5][j]==EmptyGrid&&GameMap[i-4][j]==EmptyGrid)
+               {
+                   if(color==whiteFlag)
+                   {
+                       ScoreMapP[i][j]+=150;
+                   }
+                   if(color==blackFlag)
+                   {
+                       ScoreMapAI[i][j]+=150;
+                   }
+               }
+               else if(count==2&&i-5>0&&GameMap[i-5][j]==EmptyGrid&&GameMap[i-4][j]==EmptyGrid&&GameMap[i-3][j]==EmptyGrid)
+               {
+                   if(color==whiteFlag)
+                   {
+                       ScoreMapP[i][j]+=80;
+
+                   }
+                   if(color==blackFlag)
+                   {
+                       ScoreMapAI[i][j]+=80;
+                   }
+               }
+
+               //向右计数
+               for(color=GameMap[i+1][j],right=i+1,count=0;right<15&&color!=EmptyGrid;right++)
+               {
+                   if(GameMap[right][j]==color)
+                   {
+                       count++;
+                   }
+                   else
+                   {
+                       break;
+                   }
+               }
+               if(count==4)
+               {
+                   if(color==whiteFlag)
+                   {
+                       ScoreMapP[i][j]+=2000;
+                   }
+                   if(color==blackFlag)
+                   {
+                       ScoreMapAI[i][j]+=2000;
+                   }
+                   //连4且两边为空
+                   if(i+5<15&&GameMap[i+5][j]==EmptyGrid)
+                   {
+                       if(color==whiteFlag)
+                       {
+                           ScoreMapP[i][j]+=6000;
+                       }
+                       if(color==blackFlag)
+                       {
+                           ScoreMapAI[i][j]+=6000;
+                       }
+                   }
+               }
+               else if(count==3&&i+5<15&&GameMap[i+4][j]==EmptyGrid&&GameMap[i+5][j]==EmptyGrid)
+               {
+                   if(color==whiteFlag)
+                   {
+                       ScoreMapP[i][j]+=150;
+                   }
+                   if(color==blackFlag)
+                   {
+                       ScoreMapAI[i][j]+=150;
+                   }
+               }
+               else if(count==2&&i+5<15&&GameMap[i+4][j]==EmptyGrid&&GameMap[i+5][j]==EmptyGrid&&GameMap[i+3][j]==EmptyGrid)
+               {
+                   if(color==whiteFlag)
+                   {
+                       ScoreMapP[i][j]+=80;
+
+                   }
+                   if(color==blackFlag)
+                   {
+                       ScoreMapAI[i][j]+=80;
+                   }
+               }
+
+               //中间向两边计数
+               if(GameMap[i-1][j]==GameMap[i+1][j]&&GameMap[i-1][j]!=EmptyGrid)
+               {
+                   for(color=GameMap[i-1][j],left=i-1,count=0;left>0;left--)
+                   {
+                       if(GameMap[left][j]==color)
+                       {
+                           count++;
+                       }
+                     else
+                       {
+                           break;
+                       }
+                   }
+                   for(color=GameMap[i-1][j],right=i+1;right<15;right++)
+                   {
+                       if(GameMap[right][j]==color)
+                       {
+                           count++;
+                       }
+                       else
+                       {
+                           break;
+                       }
+                   }
+                   if(count>4)
+                   {
+                       if(color==whiteFlag)
+                       {
+                           ScoreMapP[i][j]+=6000;
+                       }
+                       if(color==blackFlag)
+                       {
+                           ScoreMapAI[i][j]+=6000;
+                       }
+                   }
+                   else if(count==4)
+                   {
+                       if(left>0&&GameMap[left][j]==EmptyGrid)
+                       {
+                           if(color==whiteFlag)
+                           {
+                               ScoreMapP[i][j]+=2000;
+                           }
+                           if(color==blackFlag)
+                           {
+                               ScoreMapAI[i][j]+=2000;
+                           }
+                       }
+                       if(right<15&&GameMap[right][j]==EmptyGrid)
+                       {
+                           if(color==whiteFlag)
+                           {
+                               ScoreMapP[i][j]+=2000;
+
+                           }
+                           if(color==blackFlag)
+                           {
+                               ScoreMapAI[i][j]+=2000;
+                           }
+                       }
+                   }
+                   else if(count==3)
+                   {
+                       if(left>0&&right<15&&GameMap[left][j]==EmptyGrid&&GameMap[right][j]==EmptyGrid)
+                       {
+                           if(color==whiteFlag)
+                           {
+                               ScoreMapP[i][j]+=80;
+
+                           }
+                           if(color==blackFlag)
+                           {
+                               ScoreMapAI[i][j]+=80;
+                           }
+                       }
+                   }
+               }
+               //向上计数
+               for(color=GameMap[i][j-1],up=j-1,count=0;up>0&&color!=EmptyGrid;up--)
+               {
+                   if(GameMap[i][up]==color)
+                   {
+                       count++;
+                   }
+                   else
+                   {
+                       break;
+                   }
+               }
+               if(count==4)
+                                 {
+                                     if(color==whiteFlag)
+                                     {
+                                         ScoreMapP[i][j]+=2000;
+                                     }
+                                     if(color==blackFlag)
+                                     {
+                                         ScoreMapAI[i][j]+=2000;
+                                     }
+                                     //连4且两边为空
+                                     if(j-5>0&&GameMap[i][j-5]==EmptyGrid)
+                                     {
+                                         if(color==whiteFlag)
+                                         {
+                                             ScoreMapP[i][j]+=6000;
+                                         }
+                                         if(color==blackFlag)
+                                         {
+                                             ScoreMapAI[i][j]+=6000;
+                                         }
+                                     }
+                                 }
+                             else if(count==3&&j-5>0&&GameMap[i][j-5]==EmptyGrid&&GameMap[i][j-4]==EmptyGrid)
+                             {
+                                 if(color==whiteFlag)
+                                 {
+                                     ScoreMapP[i][j]+=150;
+                                 }
+                                 if(color==blackFlag)
+                                 {
+                                     ScoreMapAI[i][j]+=150;
+                                 }
+                             }
+                             else if(count==2&&j-5>0&&GameMap[i][j-5]==EmptyGrid&&GameMap[i][j-4]==EmptyGrid&&GameMap[i][j-3]==EmptyGrid)
+                             {
+                                 if(color==whiteFlag)
+                                 {
+                                     ScoreMapP[i][j]+=80;
+
+                                 }
+                                 if(color==blackFlag)
+                                 {
+                                     ScoreMapAI[i][j]+=80;
+                                 }
+                             }
+
+               //向下计数
+               for(color=GameMap[i][j+1],down=j+1,count=0;down<15&&color!=EmptyGrid;down++)
+               {
+                   if(GameMap[i][down]==color)
+                   {
+                       count++;
+                   }
+                   else
+                   {
+                       break;
+                   }
+               }
+               if(count==4)
+                             {
+                                 if(color==whiteFlag)
+                                 {
+                                     ScoreMapP[i][j]+=2000;
+                                 }
+                                 if(color==blackFlag)
+                                 {
+                                     ScoreMapAI[i][j]+=2000;
+                                 }
+                                 //连4且两边为空
+                                 if(j+5<15&&GameMap[i][j+5]==EmptyGrid)
+                                 {
+                                     if(color==whiteFlag)
+                                     {
+                                         ScoreMapP[i][j]+=6000;
+                                     }
+                                     if(color==blackFlag)
+                                     {
+                                         ScoreMapAI[i][j]+=6000;
+                                     }
+                                 }
+                             }
+                             else if(count==3&&j+5<15&&GameMap[i][j+5]==EmptyGrid&&GameMap[i][j+4]==EmptyGrid)
+                             {
+                                 if(color==whiteFlag)
+                                 {
+                                     ScoreMapP[i][j]+=150;
+                                 }
+                                 if(color==blackFlag)
+                                 {
+                                     ScoreMapAI[i][j]+=150;
+                                 }
+                             }
+                             else if(count==2&&j+5<15&&GameMap[i][j+5]==EmptyGrid&&GameMap[i][j+4]==EmptyGrid&&GameMap[i][j+3]==EmptyGrid)
+                             {
+                                 if(color==whiteFlag)
+                                 {
+                                     ScoreMapP[i][j]+=80;
+
+                                 }
+                                 if(color==blackFlag)
+                                 {
+                                     ScoreMapAI[i][j]+=80;
+                                 }
+                             }
+
+               //中间向上下
+               if(GameMap[i][j-1]==GameMap[i][j+1]&&GameMap[i][j-1]!=EmptyGrid)
+                             {
+                                 for(color=GameMap[i][j-1],up=j-1,count=0;up>0;up--)
+                                 {
+                                     if(GameMap[i][up]==color)
+                                     {
+                                         count++;
+                                     }
+                                     else
+                                     {
+                                         break;
+                                     }
+
+                                 }
+                                 for(color=GameMap[i][j-1],down=j+1;down<15;down++)
+                                 {
+                                     if(GameMap[i][down]==color)
+                                     {
+                                         count++;
+
+                                     }
+                                     else
+                                     {
+                                         break;
+                                     }
+                                 }
+                                 if(count>4)
+                                 {
+                                     if(color==whiteFlag)
+                                     {
+                                         ScoreMapP[i][j]+=6000;
+                                     }
+                                     if(color==blackFlag)
+                                     {
+                                         ScoreMapAI[i][j]+=6000;
+                                     }
+                                 }
+                                 else if(count==4)
+                                 {
+                                     if(up>0&&GameMap[i][up]==EmptyGrid)
+                                     {
+                                         if(color==whiteFlag)
+                                         {
+                                             ScoreMapP[i][j]+=2000;
+                                         }
+                                         if(color==blackFlag)
+                                         {
+                                             ScoreMapAI[i][j]+=2000;
+                                         }
+                                     }
+                                     if(down<15&&GameMap[i][down]==EmptyGrid)
+                                     {
+                                         if(color==whiteFlag)
+                                         {
+                                             ScoreMapP[i][j]+=2000;
+
+                                         }
+                                         if(color==blackFlag)
+                                         {
+                                             ScoreMapAI[i][j]+=2000;
+                                         }
+                                     }
+                                 }
+                                 else if(count==3)
+                                 {
+                                     if(up>0&&down<15&&GameMap[i][up]==EmptyGrid&&GameMap[i][down]==EmptyGrid)
+                                     {
+                                         if(color==whiteFlag)
+                                         {
+                                             ScoreMapP[i][j]+=80;
+
+                                         }
+                                         if(color==blackFlag)
+                                         {
+                                             ScoreMapAI[i][j]+=80;
+                                         }
+                                     }
+                                 }
+                             }
+               //斜1
+               //向斜1上计数
+               for(color=GameMap[i-1][j-1],left=i-1,up=j-1,count=0;left>0&&up>0&&color!=EmptyGrid;up--,left--)
+                              {
+                                  if(GameMap[left][up]==color)
+                                  {
+                                      count++;
+                                  }
+                                  else
+                                  {
+                                      break;
+                                  }
+                              }
+                              if(count==4)
+                                            {
+                                                if(color==whiteFlag)
+                                                {
+                                                    ScoreMapP[i][j]+=2000;
+                                                }
+                                                if(color==blackFlag)
+                                                {
+                                                    ScoreMapAI[i][j]+=2000;
+                                                }
+                                                //连4且两边为空
+                                                if(i-5>0&&j-5>0&&GameMap[i-5][j-5]==EmptyGrid)
+                                                {
+                                                    if(color==whiteFlag)
+                                                    {
+                                                        ScoreMapP[i][j]+=6000;
+                                                    }
+                                                    if(color==blackFlag)
+                                                    {
+                                                        ScoreMapAI[i][j]+=6000;
+                                                    }
+                                                }
+                                            }
+                                            else if(count==3&&j-5>0&&i-5>0&&GameMap[i-5][j-5]==EmptyGrid&&GameMap[i-4][j-4]==EmptyGrid)
+                                            {
+                                                if(color==whiteFlag)
+                                                {
+                                                    ScoreMapP[i][j]+=150;
+                                                }
+                                                if(color==blackFlag)
+                                                {
+                                                    ScoreMapAI[i][j]+=150;
+                                                }
+                                            }
+                                            else if(count==2&&i-5>0&&j-5>0&&GameMap[i-5][j-5]==EmptyGrid&&GameMap[i-4][j-4]==EmptyGrid&&GameMap[i-3][j-3]==EmptyGrid)
+                                            {
+                                                if(color==whiteFlag)
+                                                {
+                                                    ScoreMapP[i][j]+=80;
+
+                                                }
+                                                if(color==blackFlag)
+                                                {
+                                                    ScoreMapAI[i][j]+=80;
+                                                }
+                                            }
+
+                              //向斜1下计数
+                              for(color=GameMap[i+1][j+1],right=i+1,down=j+1,count=0;right<15&&down<15&&color!=EmptyGrid;down++,right++)
+                              {
+                                  if(GameMap[right][down]==color)
+                                  {
+                                      count++;
+                                  }
+                                  else
+                                  {
+                                      break;
+                                  }
+                              }
+                              if(count==4)
+                                            {
+                                                if(color==whiteFlag)
+                                                {
+                                                    ScoreMapP[i][j]+=2000;
+                                                }
+                                                if(color==blackFlag)
+                                                {
+                                                    ScoreMapAI[i][j]+=2000;
+                                                }
+                                                //连4且两边为空
+                                                if(i+5<15&&j+5<15&&GameMap[i+5][j+5]==EmptyGrid)
+                                                {
+                                                    if(color==whiteFlag)
+                                                    {
+                                                        ScoreMapP[i][j]+=6000;
+                                                    }
+                                                    if(color==blackFlag)
+                                                    {
+                                                        ScoreMapAI[i][j]+=6000;
+                                                    }
+                                                }
+                                            }
+                                            else if(count==3&&i+5<15&&j+5<15&&GameMap[i+5][j+5]==EmptyGrid&&GameMap[i+4][j+4]==EmptyGrid)
+                                            {
+                                                if(color==whiteFlag)
+                                                {
+                                                    ScoreMapP[i][j]+=150;
+                                                }
+                                                if(color==blackFlag)
+                                                {
+                                                    ScoreMapAI[i][j]+=150;
+                                                }
+                                            }
+                                            else if(count==2&&i+5<15&&j+5<15&&GameMap[i+5][j+5]==EmptyGrid&&GameMap[i+4][j+4]==EmptyGrid&&GameMap[i+3][j+3]==EmptyGrid)
+                                            {
+                                                if(color==whiteFlag)
+                                                {
+                                                    ScoreMapP[i][j]+=80;
+
+                                                }
+                                                if(color==blackFlag)
+                                                {
+                                                    ScoreMapAI[i][j]+=80;
+                                                }
+                                            }
+
+                              //中间向斜
+                              if(GameMap[i-1][j-1]==GameMap[i+1][j+1]&&GameMap[i-1][j-1]!=EmptyGrid)
+                                            {
+                                                for(color=GameMap[i-1][j-1],up=j-1,left=i-1,count=0;up>0&&left>0;up--,left--)
+                                                {
+                                                    if(GameMap[left][up]==color)
+                                                    {
+                                                        count++;
+                                                    }
+                                                    else
+                                                    {
+                                                        break;
+                                                    }
+
+                                                }
+                                                for(color=GameMap[i-1][j-1],down=j+1,right=i+1;down<15&&right<15;down++,right++)
+                                                {
+                                                    if(GameMap[right][down]==color)
+                                                    {
+                                                        count++;
+                                                    }
+                                                    else
+                                                    {
+                                                        break;
+                                                    }
+                                                }
+                                                if(count>4)
+                                                {
+                                                    if(color==whiteFlag)
+                                                    {
+                                                        ScoreMapP[i][j]+=6000;
+                                                    }
+                                                    if(color==blackFlag)
+                                                    {
+                                                        ScoreMapAI[i][j]+=6000;
+                                                    }
+                                                }
+                                                else if(count==4)
+                                                {
+                                                    if(left>0&&up>0&&GameMap[left][up]==EmptyGrid)
+                                                    {
+                                                        if(color==whiteFlag)
+                                                        {
+                                                            ScoreMapP[i][j]+=2000;
+                                                        }
+                                                        if(color==blackFlag)
+                                                        {
+                                                            ScoreMapAI[i][j]+=2000;
+                                                        }
+                                                    }
+                                                    if(down<15&&right<15&&GameMap[right][down]==EmptyGrid)
+                                                    {
+                                                        if(color==whiteFlag)
+                                                        {
+                                                            ScoreMapP[i][j]+=2000;
+
+                                                        }
+                                                        if(color==blackFlag)
+                                                        {
+                                                            ScoreMapAI[i][j]+=2000;
+                                                        }
+                                                    }
+                                                }
+                                                else if(count==3)
+                                                {
+                                                    if(left>0&&up>0&&down<15&&right<15&&GameMap[left][up]==EmptyGrid&&GameMap[right][down]==EmptyGrid)
+                                                    {
+                                                        if(color==whiteFlag)
+                                                        {
+                                                            ScoreMapP[i][j]+=80;
+
+                                                        }
+                                                        if(color==blackFlag)
+                                                        {
+                                                            ScoreMapAI[i][j]+=80;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                //斜2计数
+                              //向斜2上计数
+                              for(color=GameMap[i+1][j-1],right=i+1,up=j-1,count=0;right<15&&up>0&&color!=EmptyGrid;up--,right++)
+                                             {
+                                                 if(GameMap[right][up]==color)
+                                                 {
+                                                     count++;
+                                                 }
+                                                 else
+                                                 {
+                                                     break;
+                                                 }
+                                             }
+                                             if(count==4)
+                                                           {
+                                                               if(color==whiteFlag)
+                                                               {
+                                                                   ScoreMapP[i][j]+=2000;
+                                                               }
+                                                               if(color==blackFlag)
+                                                               {
+                                                                   ScoreMapAI[i][j]+=2000;
+                                                               }
+                                                               //连4且两边为空
+                                                               if(i+5<15&&j-5>0&&GameMap[i+5][j-5]==EmptyGrid)
+                                                               {
+                                                                   if(color==whiteFlag)
+                                                                   {
+                                                                       ScoreMapP[i][j]+=6000;
+                                                                   }
+                                                                   if(color==blackFlag)
+                                                                   {
+                                                                       ScoreMapAI[i][j]+=6000;
+                                                                   }
+                                                               }
+                                                           }
+                                                           else if(count==3&&j-5>0&&i+5<15&&GameMap[i+5][j-5]==EmptyGrid&&GameMap[i+4][j-4]==EmptyGrid)
+                                                           {
+                                                               if(color==whiteFlag)
+                                                               {
+                                                                   ScoreMapP[i][j]+=150;
+                                                               }
+                                                               if(color==blackFlag)
+                                                               {
+                                                                   ScoreMapAI[i][j]+=150;
+                                                               }
+                                                           }
+                                                           else if(count==2&&i+5<15&&j-5>0&&GameMap[i+5][j-5]==EmptyGrid&&GameMap[i+4][j-4]==EmptyGrid&&GameMap[i+3][j-3]==EmptyGrid)
+                                                           {
+                                                               if(color==whiteFlag)
+                                                               {
+                                                                   ScoreMapP[i][j]+=80;
+
+                                                               }
+                                                               if(color==blackFlag)
+                                                               {
+                                                                   ScoreMapAI[i][j]+=80;
+                                                               }
+                                                           }
+
+                                             //向斜2下计数
+                                             for(color=GameMap[i-1][j+1],left=i-1,down=j+1,count=0;left>0&&down<15&&color!=EmptyGrid;down++,left--)
+                                             {
+                                                 if(GameMap[left][down]==color)
+                                                 {
+                                                     count++;
+                                                 }
+                                                 else
+                                                 {
+                                                     break;
+                                                 }
+                                             }
+                                             if(count==4)
+                                                           {
+                                                               if(color==whiteFlag)
+                                                               {
+                                                                   ScoreMapP[i][j]+=2000;
+                                                               }
+                                                               if(color==blackFlag)
+                                                               {
+                                                                   ScoreMapAI[i][j]+=2000;
+                                                               }
+                                                               //连4且两边为空
+                                                               if(i-5>0&&j+5<15&&GameMap[i-5][j+5]==EmptyGrid)
+                                                               {
+                                                                   if(color==whiteFlag)
+                                                                   {
+                                                                       ScoreMapP[i][j]+=6000;
+                                                                   }
+                                                                   if(color==blackFlag)
+                                                                   {
+                                                                       ScoreMapAI[i][j]+=6000;
+                                                                   }
+                                                               }
+                                                           }
+                                                           else if(count==3&&i-5>0&&j+5<15&&GameMap[i-5][j+5]==EmptyGrid&&GameMap[i-4][j+4]==EmptyGrid)
+                                                           {
+                                                               if(color==whiteFlag)
+                                                               {
+                                                                   ScoreMapP[i][j]+=150;
+                                                               }
+                                                               if(color==blackFlag)
+                                                               {
+                                                                   ScoreMapAI[i][j]+=150;
+                                                               }
+                                                           }
+                                                           else if(count==2&&i-5>0&&j+5<15&&GameMap[i-5][j+5]==EmptyGrid&&GameMap[i-4][j+4]==EmptyGrid&&GameMap[i-3][j+3]==EmptyGrid)
+                                                           {
+                                                               if(color==whiteFlag)
+                                                               {
+                                                                   ScoreMapP[i][j]+=80;
+
+                                                               }
+                                                               if(color==blackFlag)
+                                                               {
+                                                                   ScoreMapAI[i][j]+=80;
+                                                               }
+                                                           }
+
+                                             //中间向斜
+                                             if(GameMap[i-1][j+1]==GameMap[i+1][j-1]&&GameMap[i-1][j+1]!=EmptyGrid)
+                                                           {
+                                                               for(color=GameMap[i-1][j+1],up=j-1,right=i+1,count=0;up>0&&right<15;up--,right++)
+                                                               {
+                                                                   if(GameMap[right][up]==color)
+                                                                   {
+                                                                       count++;
+                                                                   }
+                                                                   else
+                                                                   {
+                                                                       break;
+                                                                   }
+
+                                                               }
+                                                               for(color=GameMap[i-1][j+1],down=j+1,left=i-1;down<15&&left>0;down++,left--)
+                                                               {
+                                                                   if(GameMap[left][down]==color)
+                                                                   {
+                                                                       count++;
+                                                                   }
+                                                                   else{
+                                                                       break;
+                                                                   }
+                                                               }
+                                                               if(count>4)
+                                                               {
+                                                                   if(color==whiteFlag)
+                                                                   {
+                                                                       ScoreMapP[i][j]+=6000;
+                                                                   }
+                                                                   if(color==blackFlag)
+                                                                   {
+                                                                       ScoreMapAI[i][j]+=6000;
+                                                                   }
+                                                               }
+                                                               else if(count==4)
+                                                               {
+                                                                   if(right<15&&up>0&&GameMap[right][up]==EmptyGrid)
+                                                                   {
+                                                                       if(color==whiteFlag)
+                                                                       {
+                                                                           ScoreMapP[i][j]+=2000;
+                                                                       }
+                                                                       if(color==blackFlag)
+                                                                       {
+                                                                           ScoreMapAI[i][j]+=2000;
+                                                                       }
+                                                                   }
+                                                                   if(down<15&&left>0&&GameMap[left][down]==EmptyGrid)
+                                                                   {
+                                                                       if(color==whiteFlag)
+                                                                       {
+                                                                           ScoreMapP[i][j]+=2000;
+
+                                                                       }
+                                                                       if(color==blackFlag)
+                                                                       {
+                                                                           ScoreMapAI[i][j]+=2000;
+                                                                       }
+                                                                   }
+                                                               }
+                                                               else if(count==3)
+                                                               {
+                                                                   if(left>0&&up>0&&down<15&&right<15&&GameMap[left][down]==EmptyGrid&&GameMap[right][up]==EmptyGrid)
+                                                                   {
+                                                                       if(color==whiteFlag)
+                                                                       {
+                                                                           ScoreMapP[i][j]+=80;
+
+                                                                       }
+                                                                       if(color==blackFlag)
+                                                                       {
+                                                                           ScoreMapAI[i][j]+=80;
+                                                                       }
+                                                                   }
+                                                               }
+                                                           }
+                //*****
+                                             if(maxAIWeight<=ScoreMapAI[i][j])
+                                             {
+                                                 maxAIWeight=ScoreMapP[i][j];
+                                                 flag_AIcol=i;
+                                                 flag_AIrow=j;
+                                             }
+                                             if(maxPWeight<=ScoreMapP[i][j])
+                                             {
+                                                 maxPWeight=ScoreMapP[i][j];
+                                                 flag_pcol=i;
+                                                 flag_prow=j;
+                                             }
+            }
+        }
+    }
+
+    if(maxPWeight>=maxAIWeight)
+    {
+        col=flag_pcol;
+        row=flag_prow;
+    }
+    else
+    {
+        col=flag_AIcol;
+        row=flag_AIrow;
+    }
+}
